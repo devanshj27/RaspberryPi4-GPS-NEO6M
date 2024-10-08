@@ -1,3 +1,18 @@
+# date: 08th October 2024
+# contributed by : devanshj27 on github
+
+# the code below is working on my Raspberry Pi 4B,
+# the IC on gps_neo requires significant startup time,
+# cold start should take ~32 seconds; then the LED on it starts blinking,
+# even if the LED on the gps sensor starts blinking,
+# do not expect the sensor to provide the accurate output rightaway,
+# kindly wait for ~23 seconds or more, this is the warm start,
+# so do not plug/insert gps sensor and immediately start running the code,
+# doing so will result in code throwing an error,
+# or may give (0.0, 0.0) == (latitudes, longitudes) by default unless you are on NULL island
+
+
+
 import serial
 import time
 import pynmea2
@@ -12,7 +27,7 @@ for port in gps_ports: # try and except is implemented to connect to one of the 
                        # since it has been observed that the serial ports have been different
                        # with varying setup
     try:
-        ser = serial.Serial(port, 115200, timeout = 1)  # set a timeout for the connection
+        ser = serial.Serial(port, 9600, timeout = 1)  # set a timeout for the connection
         print(f"Connected to {port}")
         break  # this will exit the loop only if the connection is successful
     except (serial.SerialException, OSError) as e:
@@ -58,13 +73,14 @@ finally:
 # date: 08th October 2024
 # contributed by : devanshj27 on github
 
-# the code below is working properly,
-# the IC on gps_neo requires significant startup time ~90 seconds or more,
+# the code below is working on my Raspberry Pi 4B,
+# the IC on gps_neo requires significant startup time,
+# cold start should take ~32 seconds; then the LED starts blinking,
 # even if the LED on the gps sensor starts blinking,
 # do not expect the sensor to provide the accurate output rightaway,
-# kindly wait for ~25 seconds or more,
+# kindly wait for ~23 seconds or more, this is the warm start,
 # so do not plug/insert gps sensor and immediately start running the code,
-# doing so will result in code throwing an error,
+# doing so will result in code throwing an error or receiving an unexpected output
 # or may give (0.0, 0.0) == (latitudes, longitudes) by default unless you are on NULL island
 
 
