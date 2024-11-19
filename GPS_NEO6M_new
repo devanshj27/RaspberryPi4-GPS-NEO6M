@@ -1,0 +1,83 @@
+import serial
+import pynmea2
+import time
+gps_ports = ["/dev/ttyS0", "/dev/serial0", "/dev/ttyAMA0"]
+ser = None
+
+
+for port in gps_ports: # try and except is implemented to connect to one of the serial ports
+                       # and also to avoid errors by better handling the exceptions
+                       # since it has been observed that the serial ports have been different
+                       # with varying setup
+    try:
+        ser = serial.Serial(port, 9600, timeout = 1)  # set a timeout for the connection
+        print(f"Connected to {port}")
+        break  # this will exit the loop only if the connection is successful
+    except (serial.SerialException, OSError) as e:
+        continue
+#         print(f"Failed to connect to {port}: {e}") # use this line for debugging, 
+                                                     # incase the code throws an error,
+                                                # & also shows which serial port is not connected
+                                                     
+
+# ser = serial.Serial('/dev/ttyS0', 9600, timeout=1)
+
+def parse_gps_data():
+    gps_data = {
+        'time': None,
+        'lat': None,
+        'lon': None,
+        'altitude': None,
+        'satellites': None,
+        'fix_quality': None
+    }
+    
+    while True:
+        try:
+            line = ser.readline().decode('ascii', errors='replace').strip()
+            
+            if line.startswith('$GPGGA'):
+                msg = pynmea2.parse(line)
+                gps_data['time'] = msg.timestamp
+                gps_data['lat'] = msg.latitude
+                gps_data['lon'] = msg.longitude
+                gps_data['altitude'] = msg.altitude
+                gps_data['satellites'] = msg.num_sats
+                gps_data['fix_quality'] = msg.gps_qual
+                
+                print_gps_data(gps_data)
+                
+            elif line.startswith('$GPGSA'):
+                msg = pynmea2.parse(line)
+                print(f"Fix Type: {msg.mode_fix_type}")
+                print(f"PDOP: {msg.pdop}, HDOP: {msg.hdop}, VDOP: {msg.vdop}")
+                
+        except serial.SerialException as e:
+            print(f"Serial port error: {e}")
+        except pynmea2.ParseError as e:
+            print(f"Parse error: {e}")
+        except UnicodeDecodeError as e:
+            print(f"Decode error: {e}")
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+        
+#         time.sleep(1)
+
+def print_gps_data(data):
+    print("\nGPS Data:")
+    print(f"Time: {data['time']}")
+    print(f"Latitude: {data['lat']}")
+    print(f"Longitude: {data['lon']}")
+    print(f"Altitude: {data['altitude']} meters")
+    print(f"Satellites: {data['satellites']}")
+    print(f"Fix Quality: {data['fix_quality']}")
+    print("------------------------")
+
+if __name__ == "__main__":
+    try:
+        parse_gps_data()
+    except KeyboardInterrupt:
+        print("Script terminated by user")
+    finally:
+        ser.close()
+        print("Serial port closed")
